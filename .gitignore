@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+screen/
+venv/
+.env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Output files
+output/
+
+# Data files
+*.csv
+*.xlsx
+*.parquet
+
+# System files
+.DS_Store
+Thumbs.db
