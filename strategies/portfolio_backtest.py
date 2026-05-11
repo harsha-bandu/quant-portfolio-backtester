@@ -4,6 +4,7 @@ import numpy as np
 
 from universe.nifty50 import NIFTY50
 from indicators.indicators import calculate_indicators
+from config import *
 
 
 # =====================================================
@@ -50,7 +51,7 @@ def get_stock_score(df, date):
     # =====================================================
 
     past_price = (
-        df.shift(126)
+        df.shift(RELATIVE_STRENGTH_LOOKBACK)
         .loc[date]['Close']
     )
 
@@ -69,7 +70,7 @@ def get_stock_score(df, date):
     rsi_score = (
         (rsi - 40)
         / 40
-    ) * 25
+    ) * RSI_WEIGHT
 
     # =====================================================
     # TREND SCORE
@@ -79,7 +80,7 @@ def get_stock_score(df, date):
         np.log1p(
             max(trend_strength, 0)
         )
-    ) * 12
+    ) * TREND_WEIGHT
 
     # =====================================================
     # RELATIVE STRENGTH SCORE
@@ -89,14 +90,14 @@ def get_stock_score(df, date):
         np.log1p(
             max(six_month_return, 0)
         )
-    ) * 4
+    ) * RELATIVE_STRENGTH_WEIGHT
 
     # =====================================================
     # VOLATILITY PENALTY
     # =====================================================
 
     volatility_penalty = (
-        volatility * 100 * 4
+        volatility * 100 * VOLATILITY_PENALTY_WEIGHT
     )
 
     # =====================================================
@@ -129,7 +130,8 @@ def run_portfolio_backtest():
 
     nifty_df = yf.download(
         "^NSEI",
-        period="5y",
+        #period="5y",
+        period=f"{BACKTEST_YEARS}y",
         interval="1d",
         progress=False
     )
@@ -150,7 +152,8 @@ def run_portfolio_backtest():
 
             df = yf.download(
                 symbol,
-                period="5y",
+                #period="5y",
+                period=f"{BACKTEST_YEARS}y",
                 interval="1d",
                 progress=False
             )
@@ -176,9 +179,11 @@ def run_portfolio_backtest():
 
     portfolio_returns = []
 
-    equity_curve = [100]
+    #equity_curve = [100]
+    equity_curve = [STARTING_CAPITAL]
 
-    benchmark_curve = [100]
+    #benchmark_curve = [100]
+    benchmark_curve = [STARTING_CAPITAL]
 
     trade_logs = []
 
@@ -342,7 +347,7 @@ def run_portfolio_backtest():
             monthly_scores,
             key=lambda x: x["Score"],
             reverse=True
-        )[:5]
+        )[:TOP_STOCKS]
 
         # =====================================================
         # HOLDING RETURNS
@@ -397,7 +402,7 @@ def run_portfolio_backtest():
                     / entry_price
                 ) * 100
 
-                if drawdown <= -10:
+                if drawdown <= -STOP_LOSS_PCT:
 
                     exit_price = current_close
 
@@ -406,13 +411,53 @@ def run_portfolio_backtest():
                     break
 
             # ==================================
+            # ATR STOP LOSS
+            # ==================================
+
+            # atr = df.loc[current_date]['ATR']
+
+            # atr_stop_pct = (
+            #     (atr / entry_price)
+            #     * 100
+            #     * ATR_STOP_MULTIPLIER
+            # )
+
+            # for k in range(len(holding_period)):
+
+            #     current_close = (
+            #         holding_period.iloc[k]['Close']
+            #     )
+
+            #     drawdown = (
+            #         (current_close - entry_price)
+            #         / entry_price
+            #     ) * 100
+
+            #     if drawdown <= -atr_stop_pct:
+
+            #         exit_price = current_close
+
+            #         stop_loss_triggered = True
+
+            #         break
+
+            # ==================================
             # FINAL RETURN
             # ==================================
 
-            return_pct = (
+            # return_pct = (
+            #     (exit_price - entry_price)
+            #     / entry_price
+            # ) * 100
+            gross_return_pct = (
                 (exit_price - entry_price)
                 / entry_price
             ) * 100
+
+            return_pct = (
+                gross_return_pct
+                - TRANSACTION_COST_PCT
+            )   
 
             # ==================================
             # VOLATILITY
@@ -465,6 +510,10 @@ def run_portfolio_backtest():
                     2
                 ),
 
+                "Gross Return %": round(float(gross_return_pct), 2),
+
+                "Net Return %": round(float(return_pct), 2),                                      
+
                 "Stop Loss Hit": stop_loss_triggered
             })
 
@@ -507,7 +556,9 @@ def run_portfolio_backtest():
             # MAX POSITION CAP
             # ==================================
 
-            weight = min(weight, 0.30)
+            weight = min(weight, MAX_POSITION_WEIGHT)
+            # TODO:
+            # Re-normalize weights after max cap
 
             portfolio_return += (
                 item["Return"]
@@ -593,7 +644,8 @@ def run_portfolio_backtest():
     # SHARPE RATIO
     # =====================================================
 
-    risk_free_rate = 6
+    #risk_free_rate = 6
+    risk_free_rate = RISK_FREE_RATE
 
     sharpe_ratio = (
         (
