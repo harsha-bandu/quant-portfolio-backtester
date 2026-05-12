@@ -191,6 +191,8 @@ def run_portfolio_backtest():
 
     cash_months = [False]
 
+    current_holdings = []
+
     # =====================================================
     # DATE PREPARATION
     # =====================================================
@@ -343,11 +345,59 @@ def run_portfolio_backtest():
         # TOP 5 STOCKS
         # =====================================================
 
-        top_stocks = sorted(
+        # top_stocks = sorted(
+        #     monthly_scores,
+        #     key=lambda x: x["Score"],
+        #     reverse=True
+        # )[:TOP_STOCKS]
+
+        ranked_stocks = sorted(
             monthly_scores,
             key=lambda x: x["Score"],
             reverse=True
-        )[:TOP_STOCKS]
+        )
+
+        top_symbols = [
+            x["Symbol"]
+            for x in ranked_stocks[:HOLD_THRESHOLD_RANK]
+        ]
+
+        new_holdings = []
+
+        # ==================================
+        # KEEP EXISTING WINNERS
+        # ==================================
+
+        for stock in ranked_stocks:
+
+            symbol = stock["Symbol"]
+
+            if (
+                symbol in current_holdings
+                and symbol in top_symbols
+            ):
+
+                new_holdings.append(stock)
+
+        # ==================================
+        # ADD NEW STRONG STOCKS
+        # ==================================
+
+        for stock in ranked_stocks:
+
+            if len(new_holdings) >= TOP_STOCKS:
+                break
+
+            if stock not in new_holdings:
+
+                new_holdings.append(stock)
+
+        top_stocks = new_holdings[:TOP_STOCKS]
+
+        current_holdings = [
+            x["Symbol"]
+            for x in top_stocks
+        ]
 
         # =====================================================
         # HOLDING RETURNS

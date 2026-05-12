@@ -6,17 +6,34 @@ This document tracks the evolution of the quantitative portfolio backtesting fra
 
 # ✅ Current Stable Version
 
-# v1.5 — Stable Research Baseline
+# v1.7 — Turnover Optimized Stable Baseline
 
-Status: ✅ Production Research Baseline
+Status: ✅ Active Stable Research Baseline
 
-This version represents the first stable institutional-style framework with:
-- regime filtering,
-- relative strength scoring,
-- volatility-aware allocation,
-- transaction cost modeling,
-- stop-loss risk management,
-- portfolio weighting controls.
+Current framework includes:
+- Relative strength scoring
+- RSI scoring
+- 200 DMA trend filter
+- Volatility penalty
+- NIFTY regime filter
+- Risk-adjusted portfolio weighting
+- Maximum position cap
+- Transaction cost modeling
+- Fixed 10% stop-loss
+- Persistent holdings / turnover optimization
+
+---
+
+# 📊 Current Stable Metrics (v1.7)
+
+| Metric | Value |
+|---|---|
+| CAGR | 18.68% |
+| Sharpe Ratio | 0.87 |
+| Max Drawdown | -15.94% |
+| Volatility | 14.09% |
+| Total Return | 104.14% |
+| Win Rate | 46% |
 
 ---
 
@@ -24,115 +41,131 @@ This version represents the first stable institutional-style framework with:
 
 ---
 
-## ✅ v1.0 — Initial Momentum Framework
+# ✅ v1.0 — Initial Momentum Framework
 
 ### Features
 - Basic NIFTY50 universe
 - Monthly rebalancing
 - Top-ranked stock selection
 - Equal-weight allocation
-- Portfolio backtesting engine
 - Benchmark comparison
 
 ### Outcome
-- Functional baseline strategy established.
+- Functional baseline system established.
 
 ---
 
-## ✅ v1.1 — RSI + Trend Strength Scoring
+# ✅ v1.1 — RSI + Trend Strength Scoring
 
 ### Features
-- RSI scoring model
+- RSI scoring
 - 200 DMA trend filter
-- Trend strength scoring
+- Trend strength ranking
 
 ### Outcome
 - Improved momentum quality.
-- Reduced weak-trend selections.
+- Reduced weak-trend participation.
 
 ---
 
-## ✅ v1.2 — Volatility Penalty Integration
+# ✅ v1.2 — Volatility Penalty Integration
 
 ### Features
-- Volatility-adjusted scoring
-- Penalized highly volatile stocks
+- Volatility-aware scoring
+- High-volatility stock penalty
 
 ### Outcome
-- Improved stability.
-- Reduced random high-beta exposure.
+- Better portfolio stability.
+- Reduced excessive beta exposure.
 
 ---
 
-## ✅ v1.3 — Market Regime Filter
+# ✅ v1.3 — Market Regime Filter
 
 ### Features
-- NIFTY 200 DMA regime filter
-- Cash allocation during bearish market phases
+- NIFTY 200 DMA market filter
+- Cash allocation during bearish regimes
 
 ### Outcome
 - Significant drawdown reduction.
-- Improved long-term consistency.
+- Better long-term robustness.
 
 ---
 
-## ✅ v1.4 — Risk-Adjusted Portfolio Weighting
+# ✅ v1.4 — Risk-Adjusted Portfolio Weighting
 
 ### Features
-- Volatility-based position sizing
-- Risk-adjusted score weighting
+- Volatility-adjusted weighting
+- Risk-based allocation
 - Maximum position cap
 
 ### Outcome
-- Better diversification.
-- More professional portfolio construction.
+- Improved diversification.
+- More realistic portfolio construction.
 
 ---
 
-## ✅ v1.5 — Transaction Costs + Fixed Stop Loss
+# ✅ v1.5 — Transaction Costs + Fixed Stop Loss
 
 ### Features
 - Transaction cost modeling
 - Gross vs Net return tracking
-- Fixed 10% stop-loss system
+- Fixed 10% stop-loss
 - Enhanced trade logs
-- Config-driven framework
-- GitHub project structure standardization
+- Config-driven architecture
+- Standardized GitHub structure
 
 ### Outcome
 - Realistic portfolio simulation.
-- Stable research-grade baseline achieved.
-- Better robustness under practical trading conditions.
-
-### Current Stable Metrics
-- CAGR: ~12–16%
-- Sharpe Ratio: ~0.45–0.70
-- Max Drawdown: ~17–21%
-- Monthly Win Rate: ~46–50%
+- Stable research-grade framework established.
 
 ---
 
-# ❌ Rejected Research Versions
+# ❌ v1.6 — ATR-Based Stop Loss Research
 
----
-
-## ❌ v1.6 — ATR-Based Dynamic Stop Loss
+Status: ❌ Rejected
 
 ### Features Tested
-- ATR-based stop-loss sizing
+- ATR-based dynamic stop-loss
 - Volatility-adaptive exits
 
 ### Outcome
-- Increased drawdowns
 - Lower Sharpe ratio
-- Excessive stop sensitivity
-- Worse overall portfolio stability
-
-### Conclusion
-Rejected for current framework.
+- Higher instability
+- Inferior performance to fixed stop-loss
 
 ### Key Learning
-Sophisticated logic does not always improve system performance.
+More sophistication does not necessarily improve robustness.
+
+### Conclusion
+Rejected for current architecture.
+
+---
+
+# ✅ v1.7 — Turnover Optimization
+
+Status: ✅ Major Success
+
+### Features
+- Persistent holdings logic
+- Hold winners longer
+- Replace only weak positions
+- Reduced monthly churn
+- Reduced unnecessary rebalancing
+
+### Core Logic
+Existing holdings remain in portfolio if still ranked within threshold range.
+
+### Outcome
+- Massive Sharpe improvement
+- Lower drawdown
+- Improved trend capture
+- Lower turnover drag
+- Better compounding behavior
+- Smoother equity curve
+
+### Key Learning
+Portfolio management improvements can outperform indicator optimization.
 
 ---
 
@@ -140,25 +173,23 @@ Sophisticated logic does not always improve system performance.
 
 ---
 
-# 🚧 v1.7 — Turnover Optimization
+# 🚧 v1.8 — Exposure & Concentration Control
 
-Status: 🔄 In Progress
+Status: 🔄 Planned
 
 ### Objective
-Reduce unnecessary monthly churn.
+Improve portfolio robustness and diversification.
 
 ### Planned Features
-- Hold existing winners longer
-- Rebalance only when rank deteriorates
-- Reduce excessive portfolio turnover
-- Lower transaction costs
-- Improve trend persistence capture
+- Sector exposure limits
+- Position concentration monitoring
+- Dynamic exposure control
+- Correlation-aware filtering
 
 ### Expected Improvements
-- Better Sharpe ratio
-- Lower volatility
-- Improved CAGR
-- Smoother equity curve
+- Lower portfolio concentration risk
+- Improved crash resistance
+- Better risk-adjusted returns
 
 ---
 
@@ -166,79 +197,80 @@ Reduce unnecessary monthly churn.
 
 ---
 
-## 🔮 v2.0 — Multi-Factor Scoring Model
+# 🔮 v2.0 — Multi-Factor Scoring Engine
 
 ### Planned Features
 - Earnings growth factor
 - ROE quality factor
 - Relative volume factor
-- Sector momentum
+- Sector momentum factor
 - Composite ranking engine
 
 ---
 
-## 🔮 v2.1 — Advanced Risk Management
+# 🔮 v2.1 — Advanced Risk Management
 
 ### Planned Features
-- Dynamic portfolio exposure
 - Volatility targeting
+- Dynamic exposure scaling
 - Beta-adjusted weighting
-- Correlation-aware allocation
+- Portfolio risk budgeting
 
 ---
 
-## 🔮 v2.2 — Walk-Forward Optimization
+# 🔮 v2.2 — Walk-Forward Optimization
 
 ### Planned Features
 - Out-of-sample testing
-- Parameter stability testing
-- Rolling optimization windows
+- Rolling parameter validation
+- Stability testing
+- Regime robustness analysis
 
 ---
 
-## 🔮 v2.3 — Institutional Analytics Dashboard
+# 🔮 v2.3 — Institutional Analytics Dashboard
 
 ### Planned Features
-- Interactive dashboard
 - Portfolio attribution analysis
+- Interactive dashboard
 - Monthly tear sheets
-- Trade analytics visualization
+- Risk decomposition
 - Exposure tracking
 
 ---
 
-## 🔮 v2.4 — Multi-Universe Expansion
+# 🔮 v2.4 — Multi-Universe Expansion
 
 ### Planned Features
 - NIFTY Next 50
 - Midcap universe
-- Sectoral universes
-- Global equities
+- Sector universes
+- International equities
 
 ---
 
-## 🔮 v3.0 — Premium Research Framework
+# 🔮 v3.0 — Institutional Quant Research Platform
 
 ### Long-Term Vision
-A professional-grade quantitative research platform featuring:
-- advanced factor investing,
-- institutional portfolio construction,
+A professional-grade quantitative investment research framework featuring:
+- multi-factor investing,
+- portfolio optimization,
 - research automation,
 - strategy comparison engine,
-- optimization framework,
-- deployment-ready architecture.
+- advanced analytics,
+- scalable deployment architecture.
 
 ---
 
-# 📌 Research Principles
+# 📌 Research Methodology
 
-This project follows a strict research methodology:
+Framework follows strict quantitative research discipline:
 
 ✅ Hypothesis → Test → Validate → Accept/Reject
 
-Not all enhancements are retained.
+Only robust improvements are retained.
 
-Performance robustness is prioritized over complexity.
+Complexity is never added without empirical validation.
 
 ---
 
@@ -255,17 +287,19 @@ Performance robustness is prioritized over complexity.
 | Position Caps | ✅ |
 | Transaction Costs | ✅ |
 | Fixed Stop Loss | ✅ |
+| Turnover Optimization | ✅ |
 | ATR Stop Loss | ❌ Rejected |
 
 ---
 
 # 🧠 Key Learnings So Far
 
-- Simpler systems can outperform complex ones.
-- Risk management matters more than prediction accuracy.
-- Regime filters significantly improve robustness.
-- Over-optimization is dangerous.
-- Portfolio construction is as important as stock selection.
+- Portfolio construction matters enormously.
+- Turnover reduction materially improves compounding.
+- Regime filtering significantly improves robustness.
+- Simpler stop systems can outperform dynamic systems.
+- Momentum persistence is valuable.
+- Structural improvements often outperform indicator tuning.
 - Research discipline is critical.
 
 ---
@@ -281,7 +315,7 @@ Performance robustness is prioritized over complexity.
 
 ---
 
-# 📁 Project Structure
+# 📁 Current Project Structure
 
 ```text
 quant-portfolio-backtester/
