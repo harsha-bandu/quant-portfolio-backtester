@@ -178,6 +178,7 @@ def run_portfolio_backtest():
     # =====================================================
 
     portfolio_returns = []
+    monthly_return_table = []
 
     #equity_curve = [100]
     equity_curve = [STARTING_CAPITAL]
@@ -619,6 +620,11 @@ def run_portfolio_backtest():
             portfolio_return
         )
 
+        monthly_return_table.append({
+            "Month": current_month_label,
+            "Return %": round(portfolio_return, 2)
+        })
+
         # =====================================================
         # UPDATE EQUITY CURVE
         # =====================================================
@@ -780,8 +786,9 @@ def run_portfolio_backtest():
 
         "Cash Months": cash_months,
 
-        "Trade Logs": pd.DataFrame(
-            trade_logs
-        )
+        "Trade Logs": pd.DataFrame(trade_logs),
+
+        "Monthly Returns": pd.DataFrame(monthly_return_table)
+
     }
 

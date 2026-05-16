@@ -7,6 +7,21 @@ from strategies.portfolio_backtest import (
 results = run_portfolio_backtest()
 
 trade_logs = results["Trade Logs"]
+monthly_returns = results["Monthly Returns"]
+
+monthly_returns["Year"] = (pd.to_datetime(monthly_returns["Month"]).dt.year)
+
+monthly_returns["Month Name"] = (pd.to_datetime(monthly_returns["Month"]).dt.strftime("%b"))
+
+month_order = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+monthly_pivot = monthly_returns.pivot(index="Year", columns="Month Name", values="Return %")
+
+monthly_pivot = monthly_pivot.reindex(columns=month_order)
+
+print("\nMonthly Return Table:\n")
+
+print(monthly_pivot.round(2))
 
 print("\nTrade Analytics:\n")
 top_winners = (trade_logs.sort_values("Trade Return %", ascending=False).head(10))
@@ -45,7 +60,8 @@ for key, value in results.items():
         "Benchmark Curve",
         "Timeline",
         "Cash Months",
-        "Trade Logs"
+        "Trade Logs",
+        "Monthly Returns"
     ]:
 
         print(f"{key}: {value}")
