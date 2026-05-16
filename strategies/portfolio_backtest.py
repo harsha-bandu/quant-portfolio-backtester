@@ -5,6 +5,7 @@ import numpy as np
 from universe.nifty50 import NIFTY50
 from indicators.indicators import calculate_indicators
 from config import *
+from universe.sector_map import SECTOR_MAP
 
 
 # =====================================================
@@ -113,7 +114,12 @@ def get_stock_score(df, date):
 
     score = max(score, 0)
 
-    return score
+    # return score
+    return {
+    "Trend": trend_strength,
+    "RSI": rsi,
+    "Momentum": six_month_return,
+    "Volatility": volatility}
 
 
 # =====================================================
@@ -198,9 +204,11 @@ def run_portfolio_backtest():
     # DATE PREPARATION
     # =====================================================
 
-    dates = stock_data[
-        list(stock_data.keys())[0]
-    ].index
+    # dates = stock_data[
+    #     list(stock_data.keys())[0]
+    # ].index
+
+    dates = nifty_df.index
 
     date_df = pd.DataFrame(index=dates)
 
@@ -308,18 +316,23 @@ def run_portfolio_backtest():
             ):
                 continue
 
-            score = get_stock_score(
-                df,
-                current_date
-            )
+            # score = get_stock_score(df, current_date)
 
-            if score is not None:
+            # if score is not None:
+            #     monthly_scores.append({
+            #         "Symbol": symbol,
+            #         "Score": score
+            #     })
 
+            factors = get_stock_score(df, current_date)
+
+            if factors is not None:
                 monthly_scores.append({
-
                     "Symbol": symbol,
-
-                    "Score": score
+                    "Trend": factors["Trend"],
+                    "RSI": factors["RSI"],
+                    "Momentum": factors["Momentum"],
+                    "Volatility": factors["Volatility"]
                 })
 
         # =====================================================
@@ -328,19 +341,96 @@ def run_portfolio_backtest():
 
         if len(monthly_scores) == 0:
 
+            # factor_df = pd.DataFrame(monthly_scores)
+
+            # # ==================================
+            # # FACTOR NORMALIZATION
+            # # ==================================
+
+            # factor_df["Trend Rank"] = (
+            #     factor_df["Trend"]
+            #     .rank(pct=True)
+            # )
+
+            # factor_df["RSI Rank"] = (
+            #     factor_df["RSI"]
+            #     .rank(pct=True)
+            # )
+
+            # factor_df["Momentum Rank"] = (
+            #     factor_df["Momentum"]
+            #     .rank(pct=True)
+            # )
+
+            # # Lower volatility preferred
+
+            # factor_df["Volatility Rank"] = (
+            #     1 - factor_df["Volatility"]
+            #     .rank(pct=True)
+            # )
+
+            # factor_df["Score"] = (
+            #     factor_df["Trend Rank"] * TREND_WEIGHT
+            #     + factor_df["RSI Rank"] * RSI_WEIGHT
+            #     + factor_df["Momentum Rank"] * RELATIVE_STRENGTH_WEIGHT
+            #     + factor_df["Volatility Rank"] * VOLATILITY_PENALTY_WEIGHT
+            # )
+
+            # monthly_scores = factor_df.to_dict("records")
+
+            # ranked_stocks = sorted(
+            #     monthly_scores,
+            #     key=lambda x: x["Score"],
+            #     reverse=True
+            # )
+
             portfolio_returns.append(0)
+            equity_curve.append(equity_curve[-1])
 
-            equity_curve.append(
-                equity_curve[-1]
-            )
-
-            timeline.append(
-                current_month_label
-            )
+            timeline.append(current_month_label)
 
             cash_months.append(True)
 
             continue
+
+        # =====================================================
+        # FACTOR NORMALIZATION
+        # =====================================================
+
+        factor_df = pd.DataFrame(monthly_scores)
+
+        factor_df["Trend Rank"] = (factor_df["Trend"].rank(pct=True))
+
+        factor_df["RSI Rank"] = (factor_df["RSI"].rank(pct=True))
+
+        factor_df["Momentum Rank"] = (factor_df["Momentum"].rank(pct=True))
+
+        # Lower volatility preferred
+
+        factor_df["Volatility Rank"] = (1 - factor_df["Volatility"].rank(pct=True))
+
+        # =====================================================
+        # COMPOSITE SCORE
+        # =====================================================
+
+        factor_df["Score"] = (
+            factor_df["Trend Rank"] * TREND_WEIGHT
+            + factor_df["RSI Rank"] * RSI_WEIGHT
+            + factor_df["Momentum Rank"] * RELATIVE_STRENGTH_WEIGHT
+            + factor_df["Volatility Rank"] * VOLATILITY_PENALTY_WEIGHT
+        )
+
+        # =====================================================
+        # CONVERT BACK TO RECORDS
+        # =====================================================
+
+        monthly_scores = factor_df.to_dict("records")
+
+        # =====================================================
+        # FINAL RANKING
+        # =====================================================
+
+        ranked_stocks = sorted(monthly_scores, key=lambda x: x["Score"], reverse=True)
 
         # =====================================================
         # TOP 5 STOCKS
@@ -352,11 +442,12 @@ def run_portfolio_backtest():
         #     reverse=True
         # )[:TOP_STOCKS]
 
-        ranked_stocks = sorted(
-            monthly_scores,
-            key=lambda x: x["Score"],
-            reverse=True
-        )
+        # ranked_stocks = sorted(
+        #     monthly_scores,
+        #     key=lambda x: x["Score"],
+        #     reverse=True
+        # )
+
 
         top_symbols = [
             x["Symbol"]
@@ -393,7 +484,40 @@ def run_portfolio_backtest():
 
                 new_holdings.append(stock)
 
-        top_stocks = new_holdings[:TOP_STOCKS]
+        # top_stocks = new_holdings[:TOP_STOCKS]
+
+        sector_counts = {}
+
+        filtered_holdings = []
+
+        for stock in new_holdings:
+
+            symbol = stock["Symbol"]
+
+            sector = SECTOR_MAP.get(
+                symbol,
+                "Unknown"
+            )
+
+            current_sector_count = (
+                sector_counts.get(sector, 0)
+            )
+
+            if (
+                current_sector_count
+                < MAX_STOCKS_PER_SECTOR
+            ):
+
+                filtered_holdings.append(stock)
+
+                sector_counts[sector] = (
+                    current_sector_count + 1
+                )
+
+            if len(filtered_holdings) >= TOP_STOCKS:
+                break
+
+        top_stocks = filtered_holdings
 
         current_holdings = [
             x["Symbol"]
@@ -573,52 +697,66 @@ def run_portfolio_backtest():
         # =====================================================
 
         risk_adjusted_scores = []
-
+        
         for item in weighted_returns:
+            adjusted_score = (item["Score"]/ max(item["Volatility"],0.0001))
 
-            adjusted_score = (
-                item["Score"]
-                / max(
-                    item["Volatility"],
-                    0.0001
-                )
-            )
+            risk_adjusted_scores.append(adjusted_score)
 
-            risk_adjusted_scores.append(
-                adjusted_score
-            )
+        total_adjusted_score = sum(risk_adjusted_scores)
 
-        total_adjusted_score = sum(
-            risk_adjusted_scores
-        )
+        # portfolio_return = 0
+
+        # for idx, item in enumerate(weighted_returns):
+
+        #     weight = (risk_adjusted_scores[idx]/ total_adjusted_score)
+
+        #     # ==================================
+        #     # MAX POSITION CAP
+        #     # ==================================
+
+        #     weight = min(weight, MAX_POSITION_WEIGHT)
+        #     # TODO:
+        #     # Re-normalize weights after max cap
+
+        #     portfolio_return += (
+        #         item["Return"]
+        #         * weight
+        #     )
+        
+        # =====================================================
+        # INITIAL WEIGHTS
+        # =====================================================
+
+        raw_weights = []
+
+        for score in risk_adjusted_scores:
+
+            weight = (score/ total_adjusted_score)
+
+            weight = min(weight, MAX_POSITION_WEIGHT)
+
+            raw_weights.append(weight)
+
+        # =====================================================
+        # RE-NORMALIZE WEIGHTS
+        # =====================================================
+
+        weight_sum = sum(raw_weights)
+
+        normalized_weights = [w / weight_sum for w in raw_weights]
+
+        # =====================================================
+        # FINAL PORTFOLIO RETURN
+        # =====================================================
 
         portfolio_return = 0
 
-        for idx, item in enumerate(
-            weighted_returns
-        ):
+        for idx, item in enumerate(weighted_returns):
 
-            weight = (
-                risk_adjusted_scores[idx]
-                / total_adjusted_score
-            )
+            portfolio_return += (item["Return"] * normalized_weights[idx])
 
-            # ==================================
-            # MAX POSITION CAP
-            # ==================================
-
-            weight = min(weight, MAX_POSITION_WEIGHT)
-            # TODO:
-            # Re-normalize weights after max cap
-
-            portfolio_return += (
-                item["Return"]
-                * weight
-            )
-
-        portfolio_returns.append(
-            portfolio_return
-        )
+        portfolio_returns.append(portfolio_return)
 
         monthly_return_table.append({
             "Month": current_month_label,
