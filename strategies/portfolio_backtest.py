@@ -6,6 +6,7 @@ from universe.nifty50 import NIFTY50
 from indicators.indicators import calculate_indicators
 from config import *
 from universe.sector_map import SECTOR_MAP
+from strategies.portfolio_construction import construct_portfolio
 
 
 # =====================================================
@@ -194,9 +195,23 @@ def run_portfolio_backtest():
 
     trade_logs = []
 
+    holdings_history = []
+
+    monthly_turnover = []
+
+    holding_durations = {}
+
+    completed_holding_periods = []
+
     timeline = ["Start"]
 
-    cash_months = [False]
+    zero_exposure_months = [False]
+    
+    breadth_history = []
+
+    exposure_history = []
+
+    # exposure_history.append(market_exposure)
 
     current_holdings = []
 
@@ -204,55 +219,81 @@ def run_portfolio_backtest():
     # DATE PREPARATION
     # =====================================================
 
-    # dates = stock_data[
-    #     list(stock_data.keys())[0]
-    # ].index
-
     dates = nifty_df.index
-
     date_df = pd.DataFrame(index=dates)
 
-    date_df['Month'] = (
-        date_df.index.to_period('M')
-    )
+    date_df['Month'] = (date_df.index.to_period('M'))
 
-    month_end_indexes = (
-        date_df
-        .groupby('Month')
-        .tail(1)
-        .index
-    )
+    month_end_indexes = (date_df.groupby('Month').tail(1).index)
 
     # =====================================================
     # MONTHLY REBALANCING
     # =====================================================
 
-    for j in range(
-        10,
-        len(month_end_indexes) - 1
-    ):
+    for j in range(10, len(month_end_indexes) - 1):
 
         current_date = month_end_indexes[j]
-
         next_date = month_end_indexes[j + 1]
 
-        current_month_label = (
-            current_date.strftime("%Y-%m-%d")
+        current_month_label = (current_date.strftime("%Y-%m-%d"))
+
+        # =====================================================
+        # MARKET BREADTH FILTER
+        # =====================================================
+
+        stocks_above_dma = 0
+        valid_stocks = 0
+
+        for symbol, df in stock_data.items():
+
+            if current_date not in df.index:
+                continue
+
+            row = df.loc[current_date]
+
+            if pd.isna(row["DMA_200"]):
+                continue
+            valid_stocks += 1
+
+            if row["Close"] > row["DMA_200"]:
+                stocks_above_dma += 1
+
+        # =====================================================
+        # BREADTH %
+        # =====================================================
+
+        breadth_pct = (
+            (stocks_above_dma / valid_stocks) * 100
+            if valid_stocks > 0
+            else 0
         )
 
         # =====================================================
-        # MARKET REGIME FILTER
+        # DYNAMIC EXPOSURE SCALING
         # =====================================================
 
-        nifty_price = (
-            nifty_df
-            .loc[current_date]['Close']
-        )
+        if breadth_pct >= 80:
 
-        nifty_dma = (
-            nifty_df
-            .loc[current_date]['DMA_200']
-        )
+            market_exposure = 1.0
+
+        elif breadth_pct >= 60:
+
+            market_exposure = 0.8
+
+        elif breadth_pct >= 40:
+
+            market_exposure = 0.6
+
+        elif breadth_pct >= 20:
+
+            market_exposure = 0.4
+
+        else:
+
+            market_exposure = 0.0
+
+        breadth_history.append(round(breadth_pct, 2))
+        exposure_history.append(market_exposure)
 
         # =====================================================
         # BENCHMARK ALWAYS MOVES
@@ -283,26 +324,6 @@ def run_portfolio_backtest():
         )
 
         # =====================================================
-        # CASH REGIME
-        # =====================================================
-
-        if nifty_price < nifty_dma:
-
-            portfolio_returns.append(0)
-
-            equity_curve.append(
-                equity_curve[-1]
-            )
-
-            timeline.append(
-                current_month_label
-            )
-
-            cash_months.append(True)
-
-            continue
-
-        # =====================================================
         # SCORE STOCKS
         # =====================================================
 
@@ -315,14 +336,6 @@ def run_portfolio_backtest():
                 or next_date not in df.index
             ):
                 continue
-
-            # score = get_stock_score(df, current_date)
-
-            # if score is not None:
-            #     monthly_scores.append({
-            #         "Symbol": symbol,
-            #         "Score": score
-            #     })
 
             factors = get_stock_score(df, current_date)
 
@@ -341,56 +354,10 @@ def run_portfolio_backtest():
 
         if len(monthly_scores) == 0:
 
-            # factor_df = pd.DataFrame(monthly_scores)
-
-            # # ==================================
-            # # FACTOR NORMALIZATION
-            # # ==================================
-
-            # factor_df["Trend Rank"] = (
-            #     factor_df["Trend"]
-            #     .rank(pct=True)
-            # )
-
-            # factor_df["RSI Rank"] = (
-            #     factor_df["RSI"]
-            #     .rank(pct=True)
-            # )
-
-            # factor_df["Momentum Rank"] = (
-            #     factor_df["Momentum"]
-            #     .rank(pct=True)
-            # )
-
-            # # Lower volatility preferred
-
-            # factor_df["Volatility Rank"] = (
-            #     1 - factor_df["Volatility"]
-            #     .rank(pct=True)
-            # )
-
-            # factor_df["Score"] = (
-            #     factor_df["Trend Rank"] * TREND_WEIGHT
-            #     + factor_df["RSI Rank"] * RSI_WEIGHT
-            #     + factor_df["Momentum Rank"] * RELATIVE_STRENGTH_WEIGHT
-            #     + factor_df["Volatility Rank"] * VOLATILITY_PENALTY_WEIGHT
-            # )
-
-            # monthly_scores = factor_df.to_dict("records")
-
-            # ranked_stocks = sorted(
-            #     monthly_scores,
-            #     key=lambda x: x["Score"],
-            #     reverse=True
-            # )
-
             portfolio_returns.append(0)
             equity_curve.append(equity_curve[-1])
-
             timeline.append(current_month_label)
-
-            cash_months.append(True)
-
+            zero_exposure_months.append(True)
             continue
 
         # =====================================================
@@ -433,96 +400,20 @@ def run_portfolio_backtest():
         ranked_stocks = sorted(monthly_scores, key=lambda x: x["Score"], reverse=True)
 
         # =====================================================
-        # TOP 5 STOCKS
+        # CONSTRUCT PORTFOLIO
         # =====================================================
 
-        # top_stocks = sorted(
-        #     monthly_scores,
-        #     key=lambda x: x["Score"],
-        #     reverse=True
-        # )[:TOP_STOCKS]
+        construction_result = construct_portfolio(
+            ranked_stocks,
+            current_holdings,
+            holding_durations,
+            monthly_turnover,
+            completed_holding_periods,
+        )
 
-        # ranked_stocks = sorted(
-        #     monthly_scores,
-        #     key=lambda x: x["Score"],
-        #     reverse=True
-        # )
-
-
-        top_symbols = [
-            x["Symbol"]
-            for x in ranked_stocks[:HOLD_THRESHOLD_RANK]
-        ]
-
-        new_holdings = []
-
-        # ==================================
-        # KEEP EXISTING WINNERS
-        # ==================================
-
-        for stock in ranked_stocks:
-
-            symbol = stock["Symbol"]
-
-            if (
-                symbol in current_holdings
-                and symbol in top_symbols
-            ):
-
-                new_holdings.append(stock)
-
-        # ==================================
-        # ADD NEW STRONG STOCKS
-        # ==================================
-
-        for stock in ranked_stocks:
-
-            if len(new_holdings) >= TOP_STOCKS:
-                break
-
-            if stock not in new_holdings:
-
-                new_holdings.append(stock)
-
-        # top_stocks = new_holdings[:TOP_STOCKS]
-
-        sector_counts = {}
-
-        filtered_holdings = []
-
-        for stock in new_holdings:
-
-            symbol = stock["Symbol"]
-
-            sector = SECTOR_MAP.get(
-                symbol,
-                "Unknown"
-            )
-
-            current_sector_count = (
-                sector_counts.get(sector, 0)
-            )
-
-            if (
-                current_sector_count
-                < MAX_STOCKS_PER_SECTOR
-            ):
-
-                filtered_holdings.append(stock)
-
-                sector_counts[sector] = (
-                    current_sector_count + 1
-                )
-
-            if len(filtered_holdings) >= TOP_STOCKS:
-                break
-
-        top_stocks = filtered_holdings
-
-        current_holdings = [
-            x["Symbol"]
-            for x in top_stocks
-        ]
+        top_stocks = construction_result["top_stocks"]
+        current_holdings = construction_result["new_current_holdings"]
+        holding_durations = construction_result["holding_durations"]
 
         # =====================================================
         # HOLDING RETURNS
@@ -747,6 +638,38 @@ def run_portfolio_backtest():
         normalized_weights = [w / weight_sum for w in raw_weights]
 
         # =====================================================
+        # STORE HOLDINGS HISTORY
+        # =====================================================
+
+        for idx, stock in enumerate(top_stocks):
+
+            symbol = stock["Symbol"]
+
+            sector = SECTOR_MAP.get(
+                symbol,
+                "Unknown"
+            )
+
+            holdings_history.append({
+
+                "Month": current_month_label,
+
+                "Stock": symbol,
+
+                "Sector": sector,
+
+                "Score": round(
+                    float(stock["Score"]),
+                    2
+                ),
+
+                "Weight": round(
+                    float(normalized_weights[idx] * 100),
+                    2
+                )
+            })
+
+        # =====================================================
         # FINAL PORTFOLIO RETURN
         # =====================================================
 
@@ -756,21 +679,33 @@ def run_portfolio_backtest():
 
             portfolio_return += (item["Return"] * normalized_weights[idx])
 
-        portfolio_returns.append(portfolio_return)
+        # portfolio_returns.append(portfolio_return)
+
+        adjusted_portfolio_return = (
+            portfolio_return
+            * market_exposure
+        )
+
+        portfolio_returns.append(
+            adjusted_portfolio_return
+        )
 
         monthly_return_table.append({
             "Month": current_month_label,
-            "Return %": round(portfolio_return, 2)
+            # "Return %": round(portfolio_return, 2)
+            "Return %": round(adjusted_portfolio_return, 2)
         })
 
         # =====================================================
         # UPDATE EQUITY CURVE
         # =====================================================
 
-        new_equity = (
-            equity_curve[-1]
-            * (1 + portfolio_return / 100)
-        )
+        # new_equity = (
+        #     equity_curve[-1]
+        #     * (1 + portfolio_return / 100)
+        # )
+
+        new_equity = (equity_curve[-1] * (1 + adjusted_portfolio_return / 100))
 
         equity_curve.append(
             new_equity
@@ -780,7 +715,22 @@ def run_portfolio_backtest():
             current_month_label
         )
 
-        cash_months.append(False)
+        # breadth_history.append(
+        #     round(breadth_pct, 2)
+        # )
+
+        # cash_months.append(False)
+        zero_exposure_months.append(market_exposure == 0)
+
+    # =====================================================
+    # CLOSE REMAINING HOLDING PERIODS
+    # =====================================================
+
+    for symbol, duration in holding_durations.items():
+
+        completed_holding_periods.append(
+            duration
+        )
 
     # =====================================================
     # FINAL METRICS
@@ -872,6 +822,22 @@ def run_portfolio_backtest():
     )
 
     # =====================================================
+    # TURNOVER METRICS
+    # =====================================================
+
+    average_turnover = (
+        np.mean(monthly_turnover)
+        if len(monthly_turnover) > 0
+        else 0
+    )
+
+    average_holding_duration = (
+        np.mean(completed_holding_periods)
+        if len(completed_holding_periods) > 0
+        else 0
+    )    
+
+    # =====================================================
     # RETURN RESULTS
     # =====================================================
 
@@ -922,11 +888,21 @@ def run_portfolio_backtest():
 
         "Timeline": timeline,
 
-        "Cash Months": cash_months,
+        "Zero Exposure Months": zero_exposure_months,
 
         "Trade Logs": pd.DataFrame(trade_logs),
 
-        "Monthly Returns": pd.DataFrame(monthly_return_table)
+        "Holdings History": pd.DataFrame(holdings_history),
+
+        "Monthly Returns": pd.DataFrame(monthly_return_table),
+
+        "Average Turnover %": round(average_turnover, 2),
+
+        "Average Holding Duration": round(average_holding_duration, 2),
+
+        "Breadth History": breadth_history,
+
+        "Exposure History": exposure_history,
 
     }
 

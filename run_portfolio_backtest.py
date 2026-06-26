@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+from reporting.excel_exporter import export_results
 from strategies.portfolio_backtest import (
     run_portfolio_backtest
 )
@@ -8,6 +9,10 @@ results = run_portfolio_backtest()
 
 trade_logs = results["Trade Logs"]
 monthly_returns = results["Monthly Returns"]
+
+holdings_history = results["Holdings History"]
+
+exported_files = export_results(results)
 
 monthly_returns["Year"] = (pd.to_datetime(monthly_returns["Month"]).dt.year)
 
@@ -59,7 +64,7 @@ for key, value in results.items():
         "Equity Curve",
         "Benchmark Curve",
         "Timeline",
-        "Cash Months",
+        "Zero Exposure Months",
         "Trade Logs",
         "Monthly Returns"
     ]:
@@ -72,7 +77,7 @@ benchmark_curve = results["Benchmark Curve"]
 
 timeline = results["Timeline"]
 
-cash_months = results["Cash Months"]
+cash_months = results["Zero Exposure Months"]
 
 plt.figure(figsize=(14, 7))
 
@@ -106,7 +111,7 @@ for i in range(len(cash_months)):
         cash_x.append(timeline[i])
         cash_y.append(equity_curve[i])
 
-plt.scatter(cash_x, cash_y, marker="o", s=120, label="Cash Month")
+plt.scatter(cash_x, cash_y, marker="o", s=120, label="Zero Exposure")
 
 # =========================
 # FORMATTING

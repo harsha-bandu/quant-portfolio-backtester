@@ -1,152 +1,264 @@
-# 📈 Quant Portfolio Backtester
+# 🚀 AlphaForge
 
-A quantitative portfolio backtesting framework for momentum and trend-following strategies on NIFTY50 stocks using Python.
+> **A modular quantitative research framework for designing, testing, and evolving systematic investment strategies.**
 
-This project simulates monthly portfolio rebalancing using technical indicators, relative strength ranking, volatility-adjusted weighting, and market regime filtering.
+AlphaForge is a Python-based quantitative research framework designed to help traders, investors, and researchers build systematic investment strategies using a clean, modular architecture.
 
----
-
-# 🚀 Features
-
-- 📅 Monthly portfolio rebalancing
-- 📊 Momentum-based stock ranking
-- 📈 RSI + Trend + Relative Strength scoring
-- ⚖️ Volatility-adjusted portfolio weighting
-- 🛡️ Market regime filter using NIFTY 200 DMA
-- 🚨 Intra-month stop loss handling
-- 📉 Benchmark comparison vs NIFTY
-- 📌 Equity curve visualization
-- 🧾 Trade-level analytics
-- 🔍 Score effectiveness analysis
-- 📐 Risk metrics and portfolio statistics
+Unlike traditional monolithic backtesting scripts, AlphaForge separates data processing, factor scoring, portfolio construction, analytics, and reporting into independent modules, making experimentation, testing, and future enhancements significantly easier.
 
 ---
 
-# 🧠 Strategy Logic
+# ✨ Current Features
+
+## 📊 Research & Strategy
+
+* Composite multi-factor stock scoring
+* Trend Strength (200 DMA)
+* Relative Strength Momentum
+* RSI Momentum
+* Volatility-adjusted scoring
+* Monthly portfolio rebalancing
+
+## 📈 Portfolio Management
+
+* Top-N portfolio selection
+* Holding persistence using ENTRY / EXIT ranks
+* Sector diversification constraints
+* Dynamic exposure scaling using market breadth
+* Risk-adjusted position sizing
+* Transaction cost modelling
+
+## 📉 Performance Analytics
+
+* CAGR
+* Sharpe Ratio
+* Volatility
+* Maximum Drawdown
+* Monthly return table
+* Trade analytics
+* Holdings history
+* Score effectiveness analysis
+* Benchmark comparison against NIFTY
+
+## 🏗 Engineering
+
+* Modular architecture
+* Configuration-driven design
+* Research snapshots
+* Professional project structure
+* Testing framework
+* Extensible workflow engine
+
+---
+
+# 🧠 Strategy Overview
 
 ## 🌐 Universe
-- NIFTY50 stocks
+
+* NIFTY50 Stocks
 
 ## 📌 Stock Selection
 
-Stocks are ranked monthly using a composite score based on:
+Each month, stocks are ranked using a composite factor score based on:
 
-- RSI momentum
-- Distance above 200 DMA
-- Relative strength over lookback period
-- Volatility penalty
+* Trend Strength (Distance above 200 DMA)
+* Relative Strength Momentum
+* RSI
+* Volatility Penalty
 
-## 🏗️ Portfolio Construction
-
-- Top 5 ranked stocks selected monthly
-- Volatility-adjusted position sizing
-- Position weight caps applied
-
-## 🛡️ Risk Management
-
-- NIFTY 200 DMA regime filter
-- Move to cash during weak market conditions
-- 10% intra-month stop loss
-
-## 🔄 Rebalancing
-
-- Monthly
+The highest-ranked stocks are considered for portfolio inclusion.
 
 ---
 
-# 📊 Backtest Metrics
+## 🏗 Portfolio Construction
 
-| Metric | Value |
-|---|---|
-| CAGR | ~14% - 17% |
-| Sharpe Ratio | ~0.5 - 0.7 |
-| Max Drawdown | ~18% - 20% |
-| Win Rate | ~46% - 52% |
-| Test Window | 5 Years |
-
----
-
-# 🖼️ Example Outputs
-
-## 📈 Strategy vs NIFTY
-
-![Equity Curve](output/charts/strategy_vs_nifty.png)
-
-## 🔍 Score vs Trade Return
-
-![Scatter Plot](output/charts/score_vs_trade.png)
+* Monthly rebalancing
+* Top 5 ranked stocks
+* Holding persistence using ENTRY_RANK and EXIT_RANK
+* Sector diversification limits
+* Volatility-adjusted position sizing
+* Maximum position weight constraints
 
 ---
 
-# 🗂️ Project Structure
+## 🛡 Risk Management
+
+Current risk controls include:
+
+* Dynamic market exposure scaling
+* Market breadth analysis
+* Transaction costs
+* Position weight limits
+* Sector concentration limits
+
+---
+
+# 📊 Current Performance (Baseline v1.0.0)
+
+| Metric                   |           Value |
+| ------------------------ | --------------: |
+| CAGR                     |      **10.57%** |
+| Sharpe Ratio             |        **0.37** |
+| Volatility               |      **13.63%** |
+| Max Drawdown             |     **-22.59%** |
+| Average Monthly Return   |       **0.92%** |
+| Win Rate                 |      **50.00%** |
+| Average Turnover         |      **93.88%** |
+| Average Holding Duration | **2.05 Months** |
+
+---
+
+# 🏛 Architecture
 
 ```text
-analytics/
-indicators/
-strategies/
-universe/
-output/
+                    Workflow Engine
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+        ▼                  ▼                  ▼
+ Portfolio         Portfolio          Reporting
+   Scoring        Construction        & Export
+        │
+        ▼
+ Future Modules
+ ├── Portfolio Simulation
+ ├── Portfolio Metrics
+ ├── Market Data Loader
+ ├── Portfolio Optimizer
+ ├── Walk Forward Analysis
+ └── Machine Learning
 ```
 
 ---
 
-# ⚙️ Installation
+# 📂 Project Structure
 
-```bash
-git clone https://github.com/harsha-bandu/quant-portfolio-backtester.git
+```text
+AlphaForge/
+│
+├── analytics/
+├── docs/
+├── indicators/
+├── reporting/
+├── research/
+│   ├── experiments/
+│   └── snapshots/
+├── strategies/
+├── tests/
+├── universe/
+│
+├── config.py
+├── requirements.txt
+├── run_portfolio_backtest.py
+└── README.md
 ```
 
+---
+
+# ⚙ Installation
+
 ```bash
+git clone https://github.com/<harsha-bandu>/AlphaForge.git
+
+cd AlphaForge
+
+python -m venv venv
+
+venv\Scripts\activate
+
 pip install -r requirements.txt
 ```
 
 ---
 
-# ▶️ Run Backtest
+# ▶ Quick Start
+
+Run the portfolio backtest:
 
 ```bash
 python run_portfolio_backtest.py
 ```
 
----
+Run the stock screener:
 
-# 🧪 Current Enhancements
-
-Implemented:
-
-- Relative strength scoring
-- Volatility-adjusted weighting
-- Dynamic position sizing
-- Intra-month stop loss handling
-- Risk-adjusted portfolio allocation
-- Score effectiveness analytics
-- Trade-level analytics
+```bash
+python main.py
+```
 
 ---
 
-# 🔮 Planned Improvements
+# 🛣 Roadmap
 
-- ATR-based stop loss
-- Sector exposure caps
-- Transaction cost simulation
-- Walk-forward testing
-- Hyperparameter optimization
-- Factor attribution analysis
-- Market breadth indicators
-- Multi-factor ranking engine
+## ✅ Version 1.x
+
+* Modular project architecture
+* Composite factor scoring
+* Portfolio construction engine
+* Dynamic market exposure
+* Reporting framework
+* Testing infrastructure
+
+## 🚧 Version 2.x
+
+* Portfolio simulation module
+* Portfolio metrics module
+* Market data loader
+* Walk-forward optimization
+* Portfolio optimization
+
+## 🔬 Version 3.x
+
+* Machine learning ranking
+* Factor attribution
+* Regime detection
+* Advanced research framework
+
+## 🤖 Version 4.x
+
+* AI-assisted research
+* Automated strategy comparison
+* Intelligent reporting
+* Research agents
 
 ---
 
-# 🛠️ Tech Stack
+# 📚 Documentation
 
-- Python
-- Pandas
-- NumPy
-- Matplotlib
-- yFinance
+Detailed documentation is available in the `docs/` directory.
+
+* Architecture
+* Engineering Principles
+* Manifesto
+* Roadmap
 
 ---
 
-# ⚠️ Disclaimer
+# 🛠 Tech Stack
 
-This project is for educational and research purposes only and does not constitute financial advice.
+* Python
+* Pandas
+* NumPy
+* Matplotlib
+* yFinance
+
+---
+
+# 🤝 Contributing
+
+AlphaForge is an evolving quantitative research platform.
+
+Contributions, discussions, feature suggestions, and research ideas are welcome.
+
+---
+
+# ⚠ Disclaimer
+
+This project is intended for educational and research purposes only.
+
+It does **not** constitute financial or investment advice. Always perform your own due diligence before making investment decisions.
+
+---
+
+# 📄 License
+
+This project is licensed under the MIT License.

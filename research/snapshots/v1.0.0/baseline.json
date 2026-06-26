@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "cagr": 10.57,
+  "sharpe": 0.37,
+  "max_drawdown": -22.59,
+  "volatility": 13.63,
+  "win_rate": 50.00,
+  "average_turnover": 93.88,
+  "average_holding_duration": 2.05,
+  "months": 50,
+  "portfolio_size": 5,
+  "universe": "NIFTY50"
+}
